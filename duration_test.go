@@ -13,18 +13,15 @@ func TestFromString(t *testing.T) {
 	_, err := FromString("asdf")
 	assert.Equal(t, err, ErrBadFormat)
 
-	// test with month
-	_, err = FromString("P1M")
-	assert.Equal(t, err, ErrNoMonth)
-
 	// test with good full string
-	dur, err := FromString("P1Y2DT3H4M5S")
+	dur, err := FromString("P1Y2M3DT4H5M6S")
 	assert.Nil(t, err)
 	assert.Equal(t, 1, dur.Years)
-	assert.Equal(t, 2, dur.Days)
-	assert.Equal(t, 3, dur.Hours)
-	assert.Equal(t, 4, dur.Minutes)
-	assert.Equal(t, 5, dur.Seconds)
+	assert.Equal(t, 2, dur.Months)
+	assert.Equal(t, 3, dur.Days)
+	assert.Equal(t, 4, dur.Hours)
+	assert.Equal(t, 5, dur.Minutes)
+	assert.Equal(t, 6, dur.Seconds)
 
 	// test with good week string
 	dur, err = FromString("P1W")
@@ -40,16 +37,16 @@ func TestString(t *testing.T) {
 	assert.Equal(t, d.String(), "P")
 
 	// test only larger-than-day
-	d = Duration{Years: 1, Days: 2}
-	assert.Equal(t, d.String(), "P1Y2D")
+	d = Duration{Years: 1, Months: 2, Days: 3}
+	assert.Equal(t, d.String(), "P1Y2M3D")
 
 	// test only smaller-than-day
 	d = Duration{Hours: 1, Minutes: 2, Seconds: 3}
 	assert.Equal(t, d.String(), "PT1H2M3S")
 
 	// test full format
-	d = Duration{Years: 1, Days: 2, Hours: 3, Minutes: 4, Seconds: 5}
-	assert.Equal(t, d.String(), "P1Y2DT3H4M5S")
+	d = Duration{Years: 1, Months: 2, Days: 3, Hours: 4, Minutes: 5, Seconds: 6}
+	assert.Equal(t, d.String(), "P1Y2M3DT4H5M6S")
 
 	// test week format
 	d = Duration{Weeks: 1}
@@ -61,6 +58,9 @@ func TestToDuration(t *testing.T) {
 
 	d := Duration{Years: 1}
 	assert.Equal(t, d.ToDuration(), time.Hour*24*365)
+
+	d = Duration{Months: 1}
+	assert.Equal(t, d.ToDuration(), time.Hour*24*30)
 
 	d = Duration{Weeks: 1}
 	assert.Equal(t, d.ToDuration(), time.Hour*24*7)
