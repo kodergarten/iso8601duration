@@ -9,6 +9,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"math"
 	"regexp"
 	"strconv"
 	"text/template"
@@ -26,20 +27,62 @@ var (
 	// ErrBadFormat is returned when parsing fails
 	ErrBadFormat = errors.New("bad format string")
 
-	tmpl = template.Must(template.New("duration").Parse(`P{{if .Years}}{{.Years}}Y{{end}}{{if .Months}}{{.Months}}M{{end}}{{if .Weeks}}{{.Weeks}}W{{end}}{{if .Days}}{{.Days}}D{{end}}{{if .HasTimePart}}T{{end }}{{if .Hours}}{{.Hours}}H{{end}}{{if .Minutes}}{{.Minutes}}M{{end}}{{if .Seconds}}{{.Seconds}}S{{end}}`))
+	tmpl = template.Must(template.New("duration").Parse(`P{{if and .Weeks .IsWeeksOnly}}{{.Weeks}}W{{else}}{{if .Years}}{{.Years}}Y{{end}}{{if .Months}}{{.Months}}M{{end}}{{if .Days}}{{.Days}}D{{end}}{{if .HasTimePart}}T{{if .Hours}}{{.Hours}}H{{end}}{{if .Minutes}}{{.Minutes}}M{{end}}{{if .Seconds}}{{.Seconds}}S{{end}}{{end}}{{end}}`))
 
 	full = regexp.MustCompile(`P((?P<year>\d+)Y)?((?P<month>\d+)M)?((?P<day>\d+)D)?(T((?P<hour>\d+)H)?((?P<minute>\d+)M)?((?P<second>\d+)S)?)?`)
 	week = regexp.MustCompile(`P((?P<week>\d+)W)`)
 )
 
 type Duration struct {
-	Years   int
-	Months  int
-	Weeks   int
-	Days    int
-	Hours   int
-	Minutes int
-	Seconds int
+	time.Duration
+}
+
+func (d *Duration) Years() float64 {
+	x := float64(d.Duration / Year)
+	return math.Floor(x)
+}
+
+func (d *Duration) Months() float64 {
+	x := float64(d.Duration / Month)
+	y := float64(Year / Month)
+	return math.Mod(x, y)
+}
+
+func (d *Duration) Weeks() float64 {
+	x := d.Days()
+	y := float64(Week / Day)
+	if math.Mod(x, y) > 0 {
+		return 0
+	}
+	return x / y
+}
+
+func (d *Duration) Days() float64 {
+	t := d.Duration
+	for t > Year {
+		t -= Year
+	}
+	x := float64(t / Day)
+	y := float64(Month / Day)
+	return math.Mod(x, y)
+}
+
+func (d *Duration) Hours() float64 {
+	x := float64(d.Duration / time.Hour)
+	y := float64(Day / time.Hour)
+	return math.Mod(x, y)
+}
+
+func (d *Duration) Minutes() float64 {
+	x := float64(d.Duration / time.Minute)
+	y := float64(time.Hour / time.Minute)
+	return math.Mod(x, y)
+}
+
+func (d *Duration) Seconds() float64 {
+	x := float64(d.Duration / time.Second)
+	y := float64(time.Minute / time.Second)
+	return math.Mod(x, y)
 }
 
 func FromString(dur string) (*Duration, error) {
@@ -58,7 +101,7 @@ func FromString(dur string) (*Duration, error) {
 		return nil, ErrBadFormat
 	}
 
-	d := &Duration{}
+	d := time.Duration(0)
 
 	for i, name := range re.SubexpNames() {
 		part := match[i]
@@ -70,34 +113,31 @@ func FromString(dur string) (*Duration, error) {
 		if err != nil {
 			return nil, err
 		}
+
 		switch name {
 		case "year":
-			d.Years = val
+			d += time.Duration(val) * Year
 		case "month":
-			d.Months = val
+			d += time.Duration(val) * Month
 		case "week":
-			d.Weeks = val
+			d += time.Duration(val) * Week
 		case "day":
-			d.Days = val
+			d += time.Duration(val) * Day
 		case "hour":
-			d.Hours = val
+			d += time.Duration(val) * time.Hour
 		case "minute":
-			d.Minutes = val
+			d += time.Duration(val) * time.Minute
 		case "second":
-			d.Seconds = val
+			d += time.Duration(val) * time.Second
 		default:
 			return nil, errors.New(fmt.Sprintf("unknown field %s", name))
 		}
 	}
 
-	return d, nil
+	return &Duration{d}, nil
 }
 
-// String prints out the value passed in. It's not strictly according to the
-// ISO spec, but it's pretty close. In particular, to completely conform it
-// would need to round up to the next largest unit. 61 seconds to 1 minute 1
-// second, for example. It would also need to disallow weeks mingling with
-// other units.
+// String prints out the value passed in.
 func (d *Duration) String() string {
 	var s bytes.Buffer
 
@@ -109,20 +149,14 @@ func (d *Duration) String() string {
 	return s.String()
 }
 
+func (d *Duration) IsWeeksOnly() bool {
+	return time.Duration(time.Duration(d.Weeks())*Week) == d.Duration
+}
+
 func (d *Duration) HasTimePart() bool {
-	return d.Hours != 0 || d.Minutes != 0 || d.Seconds != 0
+	return d.Hours() != 0.0 || d.Minutes() != 0.0 || d.Seconds() != 0.0
 }
 
 func (d *Duration) ToDuration() time.Duration {
-	tot := time.Duration(0)
-
-	tot += Year * time.Duration(d.Years)
-	tot += Month * time.Duration(d.Months)
-	tot += Week * time.Duration(d.Weeks)
-	tot += Day * time.Duration(d.Days)
-	tot += time.Hour * time.Duration(d.Hours)
-	tot += time.Minute * time.Duration(d.Minutes)
-	tot += time.Second * time.Duration(d.Seconds)
-
-	return tot
+	return d.Duration
 }
