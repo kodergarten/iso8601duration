@@ -11,6 +11,12 @@ import (
 	"time"
 )
 
+const (
+	Day   = time.Hour * 24
+	Week  = Day * 7
+	Year  = Day * 365
+)
+
 var (
 	// ErrBadFormat is returned when parsing fails
 	ErrBadFormat = errors.New("bad format string")
@@ -105,14 +111,11 @@ func (d *Duration) HasTimePart() bool {
 }
 
 func (d *Duration) ToDuration() time.Duration {
-	day := time.Hour * 24
-	year := day * 365
-
 	tot := time.Duration(0)
 
-	tot += year * time.Duration(d.Years)
-	tot += day * 7 * time.Duration(d.Weeks)
-	tot += day * time.Duration(d.Days)
+	tot += Year * time.Duration(d.Years)
+	tot += Week * time.Duration(d.Weeks)
+	tot += Day * time.Duration(d.Days)
 	tot += time.Hour * time.Duration(d.Hours)
 	tot += time.Minute * time.Duration(d.Minutes)
 	tot += time.Second * time.Duration(d.Seconds)
