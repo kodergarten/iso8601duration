@@ -28,7 +28,7 @@ var (
 	// ErrBadFormat is returned when parsing fails
 	ErrBadFormat = errors.New("bad format string")
 
-	tmpl = template.Must(template.New("duration").Parse(`P{{if and .Weeks .IsWeeksOnly}}{{.Weeks}}W{{else}}{{if .Years}}{{.Years}}Y{{end}}{{if .Months}}{{.Months}}M{{end}}{{if .Days}}{{.Days}}D{{end}}{{if .HasTimePart}}T{{if .Hours}}{{.Hours}}H{{end}}{{if .Minutes}}{{.Minutes}}M{{end}}{{if .Seconds}}{{.Seconds}}S{{end}}{{end}}{{end}}`))
+	tmpl = template.Must(template.New("duration").Parse(`P{{if and .Weeks .IsWeeksOnly}}{{.Weeks}}W{{else}}{{if .Years}}{{.Years}}Y{{end}}{{if .Days}}{{.Days}}D{{end}}{{if .HasTimePart}}T{{if .Hours}}{{.Hours}}H{{end}}{{if .Minutes}}{{.Minutes}}M{{end}}{{if .Seconds}}{{.Seconds}}S{{end}}{{end}}{{end}}`))
 
 	full = regexp.MustCompile(`P((?P<year>\d+)Y)?((?P<month>\d+)M)?((?P<day>\d+)D)?(T((?P<hour>\d+)H)?((?P<minute>\d+)M)?((?P<second>\d+)S)?)?`)
 	week = regexp.MustCompile(`P((?P<week>\d+)W)`)
@@ -43,12 +43,6 @@ func (d *Duration) Years() float64 {
 	return math.Floor(x)
 }
 
-func (d *Duration) Months() float64 {
-	x := float64(d.Duration / Month)
-	y := float64(Year / Month)
-	return math.Mod(x, y)
-}
-
 func (d *Duration) Weeks() float64 {
 	x := d.Days()
 	y := float64(Week / Day)
@@ -59,12 +53,8 @@ func (d *Duration) Weeks() float64 {
 }
 
 func (d *Duration) Days() float64 {
-	t := d.Duration
-	for t > Year {
-		t -= Year
-	}
-	x := float64(t / Day)
-	y := float64(Month / Day)
+	x := float64(d.Duration / Day)
+	y := float64(Year / Day)
 	return math.Mod(x, y)
 }
 
@@ -138,7 +128,10 @@ func ParseString(dur string) (*Duration, error) {
 	return &Duration{d}, nil
 }
 
-// String prints out the value passed in.
+// String prints out the value passed in. It's not strictly according to the
+// ISO spec, but it's pretty close. In particular, months are not returned.
+// Instead, it returns a value in days (1D ~ 364D) or weeks (1W ~ 52W)
+// whenever possible.
 func (d *Duration) String() string {
 	var s bytes.Buffer
 
