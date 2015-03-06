@@ -1,6 +1,7 @@
 package duration
 
 import (
+	"encoding/json"
 	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
@@ -80,4 +81,20 @@ func TestToDuration(t *testing.T) {
 	p, _ = time.ParseDuration("1s")
 	d = Duration{p}
 	assert.Equal(t, d.ToDuration(), time.Second)
+}
+
+func TestJSON(t *testing.T) {
+	t.Parallel()
+
+	// test JSON Marshal
+	dur, _ := FromString("P1Y2M3DT4H5M6S")
+	bytes, err := json.Marshal(dur)
+	assert.Nil(t, err)
+	assert.NotNil(t, bytes)
+
+	// test JSON Unmarshal
+	dur = nil
+	err = json.Unmarshal(bytes, &dur)
+	assert.Nil(t, err)
+	assert.Equal(t, "P1Y2M3DT4H5M6S", dur.String())
 }
