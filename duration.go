@@ -86,7 +86,7 @@ func (d *Duration) Seconds() float64 {
 	return math.Mod(x, y)
 }
 
-func FromString(dur string) (*Duration, error) {
+func ParseString(dur string) (*Duration, error) {
 	var (
 		match []string
 		re    *regexp.Regexp
@@ -169,7 +169,7 @@ func (d *Duration) UnmarshalJSON(data []byte) error {
 	if err := dec.Decode(&s); err != nil {
 		return err
 	}
-	t, err := FromString(s)
+	t, err := ParseString(s)
 	if err != nil {
 		return err
 	}

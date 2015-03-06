@@ -7,15 +7,15 @@ import (
 	"time"
 )
 
-func TestFromString(t *testing.T) {
+func TestParseString(t *testing.T) {
 	t.Parallel()
 
 	// test with bad format
-	_, err := FromString("asdf")
+	_, err := ParseString("asdf")
 	assert.Equal(t, err, ErrBadFormat)
 
 	// test with good full string
-	dur, err := FromString("P1Y2M3DT4H5M6S")
+	dur, err := ParseString("P1Y2M3DT4H5M6S")
 	assert.Nil(t, err)
 	assert.Equal(t, 1, dur.Years())
 	assert.Equal(t, 2, dur.Months())
@@ -25,7 +25,7 @@ func TestFromString(t *testing.T) {
 	assert.Equal(t, 6, dur.Seconds())
 
 	// test with good week string
-	dur, err = FromString("P1W")
+	dur, err = ParseString("P1W")
 	assert.Nil(t, err)
 	assert.Equal(t, 1, dur.Weeks())
 }
@@ -87,7 +87,7 @@ func TestJSON(t *testing.T) {
 	t.Parallel()
 
 	// test JSON Marshal
-	dur, _ := FromString("P1Y2M3DT4H5M6S")
+	dur, _ := ParseString("P1Y2M3DT4H5M6S")
 	bytes, err := json.Marshal(dur)
 	assert.Nil(t, err)
 	assert.NotNil(t, bytes)
