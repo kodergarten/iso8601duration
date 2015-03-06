@@ -7,6 +7,7 @@ package duration
 
 import (
 	"bytes"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"math"
@@ -159,4 +160,27 @@ func (d *Duration) HasTimePart() bool {
 
 func (d *Duration) ToDuration() time.Duration {
 	return d.Duration
+}
+
+func (d *Duration) UnmarshalJSON(data []byte) error {
+	b := bytes.NewBuffer(data)
+	dec := json.NewDecoder(b)
+	var s string
+	if err := dec.Decode(&s); err != nil {
+		return err
+	}
+	t, err := FromString(s)
+	if err != nil {
+		return err
+	}
+	*d = *t
+	return nil
+}
+
+func (d Duration) MarshalJSON() ([]byte, error) {
+	var b bytes.Buffer
+	enc := json.NewEncoder(&b)
+	s := d.String()
+	enc.Encode(s)
+	return b.Bytes(), nil
 }
