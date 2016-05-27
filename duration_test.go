@@ -28,6 +28,15 @@ func TestParseString(t *testing.T) {
 	dur, err = ParseString("P1W")
 	assert.Nil(t, err)
 	assert.Equal(t, float64(1), dur.Weeks())
+
+	// test with good string with fractional seconds
+	dur, err = ParseString("P1Y2M3DT4H5M6.45S")
+	assert.Nil(t, err)
+	assert.Equal(t, float64(1), dur.Years())
+	assert.Equal(t, float64(30*2+3), dur.Days())
+	assert.Equal(t, float64(4), dur.Hours())
+	assert.Equal(t, float64(5), dur.Minutes())
+	assert.Equal(t, float64(6.45), dur.Seconds())
 }
 
 func TestString(t *testing.T) {

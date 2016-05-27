@@ -30,7 +30,7 @@ var (
 
 	tmpl = template.Must(template.New("duration").Parse(`P{{if and .Weeks .IsWeeksOnly}}{{.Weeks}}W{{else}}{{if .Years}}{{.Years}}Y{{end}}{{if .Days}}{{.Days}}D{{end}}{{if .HasTimePart}}T{{if .Hours}}{{.Hours}}H{{end}}{{if .Minutes}}{{.Minutes}}M{{end}}{{if .Seconds}}{{.Seconds}}S{{end}}{{end}}{{end}}`))
 
-	full = regexp.MustCompile(`P((?P<year>\d+)Y)?((?P<month>\d+)M)?((?P<day>\d+)D)?(T((?P<hour>\d+)H)?((?P<minute>\d+)M)?((?P<second>\d+)S)?)?`)
+	full = regexp.MustCompile(`P((?P<year>\d+)Y)?((?P<month>\d+)M)?((?P<day>\d+)D)?(T((?P<hour>\d+)H)?((?P<minute>\d+)M)?((?P<second>[\d\.]+)S)?)?`)
 	week = regexp.MustCompile(`P((?P<week>\d+)W)`)
 )
 
@@ -71,9 +71,7 @@ func (d *Duration) Minutes() float64 {
 }
 
 func (d *Duration) Seconds() float64 {
-	x := float64(d.Duration / time.Second)
-	y := float64(time.Minute / time.Second)
-	return math.Mod(x, y)
+	return (float64(d.Duration.Nanoseconds()) - math.Trunc(d.Duration.Minutes())*float64(time.Minute)) / float64(time.Second)
 }
 
 func ParseString(dur string) (*Duration, error) {
@@ -100,7 +98,7 @@ func ParseString(dur string) (*Duration, error) {
 			continue
 		}
 
-		val, err := strconv.Atoi(part)
+		val, err := strconv.ParseFloat(part, 64)
 		if err != nil {
 			return nil, err
 		}
@@ -119,7 +117,14 @@ func ParseString(dur string) (*Duration, error) {
 		case "minute":
 			d += time.Duration(val) * time.Minute
 		case "second":
-			d += time.Duration(val) * time.Second
+			d += time.Duration(int(val)) * time.Second
+			// handle fractional seconds
+			val = (val - math.Trunc(val)) * 1000.0
+			d += time.Duration(int(val)) * time.Millisecond
+			val = (val - math.Trunc(val)) * 1000.0
+			d += time.Duration(int(val)) * time.Microsecond
+			val = (val - math.Trunc(val)) * 1000.0
+			d += time.Duration(int(val)) * time.Nanosecond
 		default:
 			return nil, errors.New(fmt.Sprintf("unknown field %s", name))
 		}
