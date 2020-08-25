@@ -1,7 +1,8 @@
-package duration
+package iso8601duration
 
 import (
 	"encoding/json"
+	"encoding/xml"
 	"testing"
 	"time"
 
@@ -111,6 +112,22 @@ func TestJSON(t *testing.T) {
 	// test JSON Unmarshal
 	dur = nil
 	err = json.Unmarshal(bytes, &dur)
+	assert.Nil(t, err)
+	assert.Equal(t, "P1Y63DT4H5M6S", dur.String())
+}
+
+func TestXML(t *testing.T) {
+	t.Parallel()
+
+	// test XML Marshal
+	dur, _ := ParseString("P1Y2M3DT4H5M6S")
+	bytes, err := xml.Marshal(dur)
+	assert.Nil(t, err)
+	assert.NotNil(t, bytes)
+
+	// test XML Unmarshal
+	dur = nil
+	err = xml.Unmarshal(bytes, &dur)
 	assert.Nil(t, err)
 	assert.Equal(t, "P1Y63DT4H5M6S", dur.String())
 }

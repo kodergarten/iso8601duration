@@ -9,8 +9,8 @@ of days (24~25), months (28~31) nor years (365~366). It will default to the foll
 * 1 Day = 24 Hours
 * 1 Month = 30 Days
 * 1 Year = 365 Days
- 
-Also, converting back to string will omit months and work with days and weeks. 
+
+Also, converting back to string will omit months and work with days and weeks.
 
 e.g.
 

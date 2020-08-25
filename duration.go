@@ -1,13 +1,14 @@
-// Package duration provides a partial implementation of ISO8601 durations.
+// Package iso8601duration provides a partial implementation of ISO8601 durations.
 // Constant values are assumed for non-constant timespans for convenience
 // 1 Day = 24 Hours
 // 1 Month = 30 Days
 // 1 Year = 365 Days
-package duration
+package iso8601duration
 
 import (
 	"bytes"
 	"encoding/json"
+	"encoding/xml"
 	"errors"
 	"fmt"
 	"math"
@@ -181,4 +182,21 @@ func (d Duration) MarshalJSON() ([]byte, error) {
 	s := d.String()
 	enc.Encode(s)
 	return b.Bytes(), nil
+}
+
+func (d *Duration) UnmarshalXML(decoder *xml.Decoder, start xml.StartElement) error {
+	var s string
+	if err := decoder.DecodeElement(&s, &start); err != nil {
+		return err
+	}
+	t, err := ParseString(s)
+	if err != nil {
+		return err
+	}
+	*d = *t
+	return nil
+}
+
+func (d *Duration) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
+	return e.EncodeElement(d.String(), start)
 }
